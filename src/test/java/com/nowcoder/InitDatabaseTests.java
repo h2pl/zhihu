@@ -5,7 +5,9 @@ import com.nowcoder.dao.UserDAO;
 import com.nowcoder.model.EntityType;
 import com.nowcoder.model.Question;
 import com.nowcoder.model.User;
+import com.nowcoder.service.FollowService;
 import com.nowcoder.service.SensitiveService;
+import com.nowcoder.util.JedisAdapter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -30,16 +32,27 @@ public class InitDatabaseTests {
     @Autowired
     SensitiveService sensitiveUtil;
 
+    @Autowired
+    FollowService followService;
+
+    @Autowired
+    JedisAdapter jedisAdapter;
+
     @Test
     public void contextLoads() {
         Random random = new Random();
+        jedisAdapter.getJedis().flushDB();
         for (int i = 0; i < 11; ++i) {
             User user = new User();
             user.setHeadUrl(String.format("http://images.nowcoder.com/head/%dt.png", random.nextInt(1000)));
-            user.setName(String.format("USER%d", i));
+            user.setName(String.format("USER%d", i+1));
             user.setPassword("");
             user.setSalt("");
             userDAO.addUser(user);
+
+            for (int j = 1; j < i; ++j) {
+                followService.follow(j, EntityType.ENTITY_USER, i);
+            }
 
             user.setPassword("newpassword");
             userDAO.updatePassword(user);
@@ -56,8 +69,8 @@ public class InitDatabaseTests {
         }
 
         Assert.assertEquals("newpassword", userDAO.selectById(1).getPassword());
-        userDAO.deleteById(1);
-        Assert.assertNull(userDAO.selectById(1));
+        //userDAO.deleteById(1);
+        //Assert.assertNull(userDAO.selectById(1));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.nowcoder.async.handler;
 import com.nowcoder.async.EventHandler;
 import com.nowcoder.async.EventModel;
 import com.nowcoder.async.EventType;
+import com.nowcoder.model.EntityType;
 import com.nowcoder.model.Message;
 import com.nowcoder.model.User;
 import com.nowcoder.service.MessageService;
@@ -19,7 +20,7 @@ import java.util.List;
  * Created by nowcoder on 2016/7/30.
  */
 @Component
-public class LikeHandler implements EventHandler {
+public class FollowHandler implements EventHandler {
     @Autowired
     MessageService messageService;
 
@@ -33,14 +34,20 @@ public class LikeHandler implements EventHandler {
         message.setToId(model.getEntityOwnerId());
         message.setCreatedDate(new Date());
         User user = userService.getUser(model.getActorId());
-        message.setContent("用户" + user.getName()
-                + "赞了你的评论,http://127.0.0.1:8087/question/" + model.getExt("questionId"));
+
+        if (model.getEntityType() == EntityType.ENTITY_QUESTION) {
+            message.setContent("用户" + user.getName()
+                    + "关注了你的问题,http://127.0.0.1:8080/question/" + model.getEntityId());
+        } else if (model.getEntityType() == EntityType.ENTITY_USER) {
+            message.setContent("用户" + user.getName()
+                    + "关注了你,http://127.0.0.1:8080/user/" + model.getActorId());
+        }
 
         messageService.addMessage(message);
     }
 
     @Override
     public List<EventType> getSupportEventTypes() {
-        return Arrays.asList(EventType.LIKE);
+        return Arrays.asList(EventType.FOLLOW);
     }
 }
