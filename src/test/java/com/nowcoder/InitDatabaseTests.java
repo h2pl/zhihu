@@ -2,8 +2,10 @@ package com.nowcoder;
 
 import com.nowcoder.dao.QuestionDAO;
 import com.nowcoder.dao.UserDAO;
+import com.nowcoder.model.EntityType;
 import com.nowcoder.model.Question;
 import com.nowcoder.model.User;
+import com.nowcoder.service.SensitiveService;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -11,7 +13,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.SpringApplicationConfiguration;
 import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.util.Date;
 import java.util.Random;
@@ -25,6 +26,9 @@ public class InitDatabaseTests {
 
     @Autowired
     QuestionDAO questionDAO;
+
+    @Autowired
+    SensitiveService sensitiveUtil;
 
     @Test
     public void contextLoads() {
@@ -54,5 +58,12 @@ public class InitDatabaseTests {
         Assert.assertEquals("newpassword", userDAO.selectById(1).getPassword());
         userDAO.deleteById(1);
         Assert.assertNull(userDAO.selectById(1));
+    }
+
+    @Test
+    public void testSensitive() {
+        String content = "question content <img src=\"https:\\/\\/baidu.com/ff.png\">色情赌博";
+        String result = sensitiveUtil.filter(content);
+        System.out.println(result);
     }
 }

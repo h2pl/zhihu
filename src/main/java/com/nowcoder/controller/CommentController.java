@@ -70,6 +70,7 @@ public class CommentController {
             comment.setCreatedDate(new Date());
             comment.setStatus(0);
 
+
             commentService.addComment(comment);
             // 更新题目里的评论数量
             Object savePoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();

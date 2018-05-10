@@ -31,15 +31,15 @@ public class QuestionService {
         return i;
     }
 
-    public Question selectById(int id) {
-        return questionDAO.selectById(id);
-    }
-
     public List<Question> getLatestQuestions(int userId, int offset, int limit) {
         return questionDAO.selectLatestQuestions(userId, offset, limit);
     }
 
     public void updateCommentCount(int entityId, int count) {
         questionDAO.updateCommentCount(entityId, count);
+    }
+
+    public Question getById(int qid) {
+        return questionDAO.selectById(qid);
     }
 }
