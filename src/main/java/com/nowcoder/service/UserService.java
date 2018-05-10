@@ -108,4 +108,8 @@ public class UserService {
     public void logout(String ticket) {
         loginTicketDAO.updateStatus(ticket, 1);
     }
+
+    public User selectByName(String toName) {
+        return userDAO.selectByName(toName);
+    }
 }
