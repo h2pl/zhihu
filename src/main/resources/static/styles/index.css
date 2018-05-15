@@ -10256,7 +10256,7 @@ html.no-touchevents .zu-top-nav-userinfo:hover {
 .topnav-noauth {
     float: right;
     margin: 0 0 0 15px;
-    line-height: 45px
+    line-height: 46px
 }
 
 .topnav-noauth .zg-icon {
@@ -10268,8 +10268,8 @@ html.no-touchevents .zu-top-nav-userinfo:hover {
 .topnav-noauth a {
     padding: 0 10px;
     width: auto;
-    height: 45px;
-    line-height: 45px;
+    height: 46px;
+    line-height: 46px;
     text-align: center;
     display: block;
     color: #eee;
@@ -16587,4 +16587,24 @@ html.no-touchevents .carousel:hover .carousel-navigation-btn {
 .openinapp-instruction-page .inner .instructions .step-content {
     font-size: 12px;
     color: #666
+}
+.zm-profile-section-wrap {
+    margin-bottom: 20px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 1px 0 #f2f4f5;
+}
+.zm-profile-section-list {
+    padding: 0 14px;
+}
+.zm-profile-section-head {
+    overflow: hidden;
+    padding: 7px 14px;
+    border-bottom: 1px solid #EEE;
+}
+.zm-profile-section-name {
+    float: left;
+    font-size: 14px;
+    font-weight: 700;
+    color: #666;
 }

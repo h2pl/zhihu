@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.nowcoder.dao.FeedDAO">
+    <sql id="table">feed</sql>
+    <sql id="selectFields">id, created_date,user_id, data, type
+    </sql>
+    <select id="selectUserFeeds" resultType="com.nowcoder.model.Feed">
+        SELECT
+        <include refid="selectFields"/>
+        FROM
+        <include refid="table"/>
+
+        WHERE id &lt; #{maxId}
+
+        <if test="userIds.size() != 0">
+            AND user_id in
+            <foreach item="item" index="index" collection="userIds"
+                     open="(" separator="," close=")">
+                #{item}
+            </foreach>
+        </if>
+        ORDER BY id DESC
+        LIMIT #{count}
+    </select>
+</mapper>

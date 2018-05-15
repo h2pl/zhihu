@@ -4,35 +4,35 @@ import com.nowcoder.async.EventModel;
 import com.nowcoder.async.EventProducer;
 import com.nowcoder.async.EventType;
 import com.nowcoder.model.*;
-import com.nowcoder.service.CommentService;
-import com.nowcoder.service.FollowService;
-import com.nowcoder.service.QuestionService;
-import com.nowcoder.service.UserService;
+import com.nowcoder.service.*;
+import com.nowcoder.util.RedisKeyUtil;
 import com.nowcoder.util.WendaUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.View;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
- * Created by 周杰伦 on 2018/5/10.
+ * Created by nowcoder on 2016/7/30.
  */
 @Controller
 public class FollowController {
-    public static final Logger logger = LoggerFactory.getLogger(FollowController.class);
-
     @Autowired
     FollowService followService;
 
     @Autowired
+    CommentService commentService;
+
+    @Autowired
     QuestionService questionService;
+
+    @Autowired
+    UserService userService;
 
     @Autowired
     HostHolder hostHolder;
@@ -40,56 +40,38 @@ public class FollowController {
     @Autowired
     EventProducer eventProducer;
 
-    @Autowired
-    UserService userService;
-
-    @Autowired
-    CommentService commentService;
-
-    @RequestMapping(path = {"/followUesr"}, method = {RequestMethod.POST})
-    public String follow(@RequestParam("userId") int userId) {
-        try {
-            if (hostHolder.getUser() == null) {
-                return WendaUtil.getJSONString(1, "没有登陆");
-            }
-            int id = hostHolder.getUser().getId();
-            boolean ret = followService.follow(id, EntityType.ENTITY_USER, userId);
-            //异步邮件通知
-            eventProducer.fireEvent(new EventModel(EventType.FOLLOW)
-                    .setActorId(id).setEntityId(userId).setEntityType(EntityType.ENTITY_USER));
-            if (ret == true) {
-                long count = followService.getFollowerCount(EntityType.ENTITY_USER, userId);
-                return WendaUtil.getJSONString(0, String.valueOf(count));
-            }else {
-                return WendaUtil.getJSONString(1, "关注失败");
-            }
-        }catch (Exception e) {
-            logger.error("关注失败" + e.getMessage());
-            return WendaUtil.getJSONString(1, "关注失败");
+    @RequestMapping(path = {"/followUser"}, method = {RequestMethod.POST, RequestMethod.GET})
+    @ResponseBody
+    public String followUser(@RequestParam("userId") int userId) {
+        if (hostHolder.getUser() == null) {
+            return WendaUtil.getJSONString(999);
         }
+
+        boolean ret = followService.follow(hostHolder.getUser().getId(), EntityType.ENTITY_USER, userId);
+
+        eventProducer.fireEvent(new EventModel(EventType.FOLLOW)
+                .setActorId(hostHolder.getUser().getId()).setEntityId(userId)
+                .setEntityType(EntityType.ENTITY_USER).setEntityOwnerId(userId));
+
+        // 返回关注的人数
+        return WendaUtil.getJSONString(ret ? 0 : 1, String.valueOf(followService.getFolloweeCount(hostHolder.getUser().getId(), EntityType.ENTITY_USER)));
     }
 
-    @RequestMapping(path = {"/unfollowUesr"}, method = {RequestMethod.POST})
-    public String unfollow(@RequestParam("userId") int userId) {
-        try {
-            if (hostHolder.getUser() == null) {
-                return WendaUtil.getJSONString(1, "没有登陆");
-            }
-            int id = hostHolder.getUser().getId();
-            boolean ret = followService.unfollow(id, EntityType.ENTITY_USER, userId);
-            eventProducer.fireEvent(new EventModel(EventType.UNFOLLOW)
-                    .setActorId(id).setEntityId(userId).setEntityType(EntityType.ENTITY_USER));
-            if (ret == true) {
-                long count = followService.getFollowerCount(EntityType.ENTITY_USER, userId);
-                return WendaUtil.getJSONString(0, String.valueOf(count));
-            }else {
-                return WendaUtil.getJSONString(1, "取消关注失败");
-            }
-        }catch (Exception e) {
-            logger.error("取消关注失败" + e.getMessage());
-            return WendaUtil.getJSONString(1, "取消关注失败");
+    @RequestMapping(path = {"/unfollowUser"}, method = {RequestMethod.POST})
+    @ResponseBody
+    public String unfollowUser(@RequestParam("userId") int userId) {
+        if (hostHolder.getUser() == null) {
+            return WendaUtil.getJSONString(999);
         }
 
+        boolean ret = followService.unfollow(hostHolder.getUser().getId(), EntityType.ENTITY_USER, userId);
+
+        eventProducer.fireEvent(new EventModel(EventType.UNFOLLOW)
+                .setActorId(hostHolder.getUser().getId()).setEntityId(userId)
+                .setEntityType(EntityType.ENTITY_USER).setEntityOwnerId(userId));
+
+        // 返回关注的人数
+        return WendaUtil.getJSONString(ret ? 0 : 1, String.valueOf(followService.getFolloweeCount(hostHolder.getUser().getId(), EntityType.ENTITY_USER)));
     }
 
     @RequestMapping(path = {"/followQuestion"}, method = {RequestMethod.POST})
@@ -142,7 +124,6 @@ public class FollowController {
         return WendaUtil.getJSONString(ret ? 0 : 1, info);
     }
 
-    //获取一个用户的粉丝列表
     @RequestMapping(path = {"/user/{uid}/followers"}, method = {RequestMethod.GET})
     public String followers(Model model, @PathVariable("uid") int userId) {
         List<Integer> followerIds = followService.getFollowers(EntityType.ENTITY_USER, userId, 0, 10);
@@ -156,7 +137,6 @@ public class FollowController {
         return "followers";
     }
 
-    //获取一个用户的关注列表，这里只获取关注的用户列表
     @RequestMapping(path = {"/user/{uid}/followees"}, method = {RequestMethod.GET})
     public String followees(Model model, @PathVariable("uid") int userId) {
         List<Integer> followeeIds = followService.getFollowees(userId, EntityType.ENTITY_USER, 0, 10);
@@ -171,7 +151,6 @@ public class FollowController {
         return "followees";
     }
 
-    //该方法返回一个用户和与他有关的用户的关系列表。会列举每个用户的基本信息，粉丝数和关注数，以及我是否关注该用户。
     private List<ViewObject> getUsersInfo(int localUserId, List<Integer> userIds) {
         List<ViewObject> userInfos = new ArrayList<ViewObject>();
         for (Integer uid : userIds) {
@@ -194,4 +173,3 @@ public class FollowController {
         return userInfos;
     }
 }
-

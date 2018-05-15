@@ -3,7 +3,7 @@ package com.nowcoder.model;
 import java.util.Date;
 
 /**
- * Created by nowcoder on 2016/7/9.
+ * Created by nowcoder on 2016/7/24.
  */
 public class Message {
     private int id;
@@ -65,7 +65,12 @@ public class Message {
     public String getConversationId() {
         if (fromId < toId) {
             return String.format("%d_%d", fromId, toId);
+        } else {
+            return String.format("%d_%d", toId, fromId);
         }
-        return String.format("%d_%d", toId, fromId);
+    }
+
+    public void setConversationId(String conversationId) {
+        this.conversationId = conversationId;
     }
 }

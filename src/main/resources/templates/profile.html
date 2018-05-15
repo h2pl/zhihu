@@ -2,23 +2,64 @@
 <link rel="stylesheet" href="../styles/index.css">
 <link rel="stylesheet" href="../styles/detail.css">
     <div class="zg-wrap zu-main clearfix " role="main">
+        <div class="zm-profile-section-wrap zm-profile-followee-page">
+            <!--
+                <div class="zm-profile-section-head">
+                    <span class="zm-profile-section-name">
+                        <a href="#">${profileUser.user.name}</a> 关注了 ${profileUser.followerCount} 人
+                    </span>
+                </div>-->
+                <div class="zm-profile-section-list">
+                    <div id="zh-profile-follows-list">
+                        <div class="zh-general-list clearfix">
+                            <div class="zm-profile-card zm-profile-section-item zg-clear no-hovercard">
+                                <div class="zg-right">
+                                    #if ($profileUser.followed)
+                                    <button class="zg-btn zg-btn-unfollow zm-rich-follow-btn small nth-0
+                                    js-follow-user" data-status="1" data-id="$profileUser.user.id">取消关注</button>
+                                    #else
+                                    <button class="zg-btn zg-btn-follow zm-rich-follow-btn small nth-0
+                                    js-follow-user" data-id="$profileUser.user.id">关注</button>
+                                    #end
+                                </div>
+                                <a title="Barty" class="zm-item-link-avatar" href="/user/${profileUser.user.id}">
+                                    <img src="${profileUser.user.headUrl}" class="zm-item-img-avatar">
+                                </a>
+                                <div class="zm-list-content-medium">
+                                    <h2 class="zm-list-content-title"><a data-tip="p$t$buaabarty" href="/user/${profileUser.user.id}" class="zg-link">${profileUser.user.name}</a></h2>
+
+                                    <!-- <div class="zg-big-gray">计蒜客教研首席打杂</div> -->
+                                    <div class="details zg-gray">
+                                        <a target="_blank" href="/user/${profileUser.user.id}/followers" class="zg-link-gray-normal">${profileUser.followerCount}粉丝</a>
+                                        /
+                                        <a target="_blank" href="/user/${profileUser.user.id}/followees" class="zg-link-gray-normal">${profileUser.followeeCount}关注</a>
+                                        /
+                                        <a target="_blank" href="#" class="zg-link-gray-normal">${profileUser.commentCount} 回答</a>
+                                        /
+                                        <a target="_blank" href="#" class="zg-link-gray-normal">548 赞同</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         <div class="zu-main-content">
             <div class="zu-main-content-inner">
                 <div class="zg-section" id="zh-home-list-title">
                     <i class="zg-icon zg-icon-feedlist"></i>最新动态
-                    <input type="hidden" id="is-topstory">
                     <span class="zg-right zm-noti-cleaner-setting" style="list-style:none">
                         <a href="https://nowcoder.com/settings/filter" class="zg-link-gray-normal">
-                            <i class="zg-icon zg-icon-settings"></i>设置</a></span>
+                            <i class="zg-icon zg-icon-settings"></i>设置
+                        </a>
+                    </span>
                 </div>
-                <div class="zu-main-feed-con navigable" data-feedtype="topstory" id="zh-question-list" data-widget="navigable" data-navigable-options="{&quot;items&quot;:&quot;&gt; .zh-general-list .feed-content&quot;,&quot;offsetTop&quot;:-82}">
-                    <a href="javascript:;" class="zu-main-feed-fresh-button" id="zh-main-feed-fresh-button" style="display:none"></a>
-                    <div id="js-home-feed-list" class="zh-general-list topstory clearfix" data-init="{&quot;params&quot;: {}, &quot;nodename&quot;: &quot;TopStory2FeedList&quot;}" data-delayed="true" data-za-module="TopStoryFeedList">
-
+                <div class="zu-main-feed-con navigable" data-feedtype="topstory" id="zh-question-list">
+                    <div id="js-home-feed-list" class="zh-general-list topstory clearfix">
                         #foreach($vo in $vos)
                         <div class="feed-item folding feed-item-hook feed-item-2
                         " feed-item-a="" data-type="a" id="feed-2" data-za-module="FeedItem" data-za-index="">
-                            <meta itemprop="ZReactor" data-id="389034" data-meta="{&quot;source_type&quot;: &quot;promotion_answer&quot;, &quot;voteups&quot;: 4168, &quot;comments&quot;: 69, &quot;source&quot;: []}">
+                            <meta itemprop="ZReactor" data-id="389034" data-meta="">
                             <div class="feed-item-inner">
                                 <div class="avatar">
                                     <a title="$!{vo.user.name}" data-tip="p$t$amuro1230" class="zm-item-link-avatar" target="_blank" href="https://nowcoder.com/people/amuro1230">
@@ -42,7 +83,7 @@
                                             <div class="zm-item-vote-info" data-votecount="4168" data-za-module="VoteInfo">
                                                 <span class="voters text">
                                                     <a href="#" class="more text">
-                                                        <span class="js-voteCount">4168</span>&nbsp;人赞同</a></span>
+                                                        <span class="js-voteCount"></span>&nbsp;人赞同</a></span>
                                             </div>
                                             <div class="zm-item-rich-text expandable js-collapse-body" data-resourceid="123114" data-action="/answer/content" data-author-name="李淼" data-entry-url="/question/19857995/answer/13174385">
                                                 <div class="zh-summary summary clearfix">${vo.question.content}</div>
@@ -69,10 +110,11 @@
                         </div>
                         #end
                     </div>
-                    <a href="javascript:;" id="zh-load-more" data-method="next" class="zg-btn-white zg-r3px zu-button-more" style="">更多</a></div>
+                    <a href="javascript:;" id="zh-load-more" class="zg-btn-white zg-r3px zu-button-more">更多</a>
+                </div>
             </div>
         </div>
     </div>
 #parse("js.html")
-<script type="text/javascript" src="/scripts/main/site/detail.js"></script>
+<script type="text/javascript" src="/scripts/main/site/profile.js"></script>
 #parse("footer.html")

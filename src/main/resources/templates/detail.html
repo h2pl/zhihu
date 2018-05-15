@@ -31,44 +31,27 @@
             </div>
             <div class="zm-side-section">
                 <div class="zm-side-section-inner" id="zh-question-side-header-wrap">
-                    <button data-follow="q:m:button" class="follow-button zg-follow zg-btn-green" data-id="6727688">
+                    #if ($followed)
+                    <button class="follow-button zg-follow zg-btn-white js-follow-question" data-id="${question.id}"
+                            data-status="1">
+                        取消关注
+                    </button>
+                    #else
+                    <button class="follow-button zg-follow zg-btn-green js-follow-question" data-id="${question.id}">
                         关注问题
                     </button>
+                    #end
                     <div class="zh-question-followers-sidebar">
                         <div class="zg-gray-normal">
-                            <a href="">
-                                <strong>9</strong></a>人关注该问题
+                            <a href="javascript:void(0);"><strong class="js-user-count">${followUsers.size()}</strong></a>人关注该问题
                         </div>
-                        <div class="list zu-small-avatar-list zg-clear">
-                                <span class="zm-item-link-avatar">
-                                    <img title="匿名用户" class="zm-item-img-avatar"
-                                         src="../images/res/aadd7b895_s.jpg"></span>
-                            <a data-tip="p$b$yi-yi-98-91-99" class="zm-item-link-avatar" href=""
-                               data-original_title="奕奕">
-                                <img src="../images/res/6ceea810748d179f57cac0baa5cf9592_s.jpg"
+                        <div class="list zu-small-avatar-list zg-clear js-user-list">
+                            #foreach($vo in $followUsers)
+                            <a class="zm-item-link-avatar js-user-${vo.id}" href="/user/${vo.id}"
+                               data-original_title="${vo.name}">
+                                <img src="${vo.headUrl}"
                                      class="zm-item-img-avatar"></a>
-                            <a data-tip="p$b$wang-wu-29-54" class="zm-item-link-avatar" href=""
-                               data-original_title="王五">
-                                <img src="../images/res/da8e974dc_s.jpg" class="zm-item-img-avatar"></a>
-                            <a data-tip="p$b$huang-xiang-90-99" class="zm-item-link-avatar" href=""
-                               data-original_title="案小声">
-                                <img src="../images/res/19456ebfe8b207320735f282769ac635_s.jpg"
-                                     class="zm-item-img-avatar"></a>
-                            <a data-tip="p$b$yingxiaodao" class="zm-item-link-avatar" href="" data-original_title="营销岛">
-                                <img src="../images/res/11be4a90ed938abfbab4899df56ee754_s.png"
-                                     class="zm-item-img-avatar"></a>
-                            <a data-tip="p$b$hero-hou-23" class="zm-item-link-avatar" href=""
-                               data-original_title="Hero Hou">
-                                <img src="../images/res/da8e974dc_s.jpg" class="zm-item-img-avatar"></a>
-                            <a data-tip="p$b$jin-hua-zhang-10" class="zm-item-link-avatar" href=""
-                               data-original_title="荷尔蒙毒品">
-                                <img src="../images/res/d207854fffc9e0289fbd6bbbb3986988_s.jpg"
-                                     class="zm-item-img-avatar"></a>
-                            <a title="宇轩" data-tip="p$t$yu-xuan-91-11" class="zm-item-link-avatar" href="">
-                                <img src="../images/res/1ac7840eeb19ada0bbf85f51702d5784_s.jpg"
-                                     class="zm-item-img-avatar"></a>
-                            <a title="尹锋" data-tip="p$t$yin-feng" class="zm-item-link-avatar" href="">
-                                <img src="../images/res/da8e974dc_s.jpg" class="zm-item-img-avatar"></a>
+                            #end
                         </div>
                     </div>
                 </div>
@@ -125,7 +108,7 @@
                     <a class="zg-anchor-hidden ac" name="22162611-comment"></a>
                     <div class="zm-item-meta answer-actions clearfix js-contentActions">
                         <div class="zm-meta-panel">
-                            <a itemprop="url" class="answer-date-link meta-item" target="_blank" href="">发布于 $date.format('yyyy-MM-dd HH:mm:ss', $comment.comment.createdDate)</a>
+                            <a itemprop="url" class="answer-data-link meta-item" target="_blank" href="">发布于 $data.format('yyyy-MM-dd HH:mm:ss', $comment.comment.createdDate)</a>
                             <a href="" name="addcomment" class="meta-item toggle-comment js-toggleCommentBox">
                                 <i class="z-icon-comment"></i>4 条评论</a>
 
@@ -159,4 +142,6 @@
         </div>
     </div>
 </div>
+#parse("js.html")
+<script type="text/javascript" src="/scripts/main/site/detail.js"></script>
 #parse("footer.html")

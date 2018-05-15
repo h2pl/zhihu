@@ -1,45 +1,32 @@
 package com.nowcoder.controller;
 
+import com.nowcoder.async.EventModel;
+import com.nowcoder.async.EventProducer;
+import com.nowcoder.async.EventType;
 import com.nowcoder.model.Comment;
 import com.nowcoder.model.EntityType;
 import com.nowcoder.model.HostHolder;
-import com.nowcoder.model.ViewObject;
 import com.nowcoder.service.CommentService;
 import com.nowcoder.service.QuestionService;
-import com.nowcoder.service.SensitiveService;
-import com.nowcoder.service.UserService;
 import com.nowcoder.util.WendaUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-import org.springframework.ui.Model;
-import org.springframework.util.StreamUtils;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.HtmlUtils;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
- * Created by nowcoder on 2016/7/2.
+ * Created by nowcoder on 2016/7/24.
  */
 @Controller
 public class CommentController {
     private static final Logger logger = LoggerFactory.getLogger(CommentController.class);
-
     @Autowired
     HostHolder hostHolder;
-
-    @Autowired
-    UserService userService;
 
     @Autowired
     CommentService commentService;
@@ -48,45 +35,35 @@ public class CommentController {
     QuestionService questionService;
 
     @Autowired
-    SensitiveService sensitiveService;
+    EventProducer eventProducer;
+
 
     @RequestMapping(path = {"/addComment"}, method = {RequestMethod.POST})
-    @Transactional
     public String addComment(@RequestParam("questionId") int questionId,
                              @RequestParam("content") String content) {
         try {
-            content = HtmlUtils.htmlEscape(content);
-            content = sensitiveService.filter(content);
-            // 过滤content
             Comment comment = new Comment();
+            comment.setContent(content);
             if (hostHolder.getUser() != null) {
                 comment.setUserId(hostHolder.getUser().getId());
             } else {
                 comment.setUserId(WendaUtil.ANONYMOUS_USERID);
+                // return "redirect:/reglogin";
             }
-            comment.setContent(content);
-            comment.setEntityId(questionId);
-            comment.setEntityType(EntityType.ENTITY_QUESTION);
             comment.setCreatedDate(new Date());
-            comment.setStatus(0);
-
-
+            comment.setEntityType(EntityType.ENTITY_QUESTION);
+            comment.setEntityId(questionId);
             commentService.addComment(comment);
-            // 更新题目里的评论数量
-            Object savePoint = TransactionAspectSupport.currentTransactionStatus().createSavepoint();
-            try {
-                int count = commentService.getCommentCount(comment.getEntityId(), comment.getEntityType());
-                //此处应该使用一个事务，保证a操作和b操作的数据库操作具有一致性。
-                questionService.updateCommentCount(comment.getEntityId(), count);
-            }catch (Exception e) {
-                logger.error("事务提交失败" + e.getMessage());
-                TransactionAspectSupport.currentTransactionStatus().rollbackToSavepoint(savePoint);
-            }
 
-            // 怎么异步化
+            int count = commentService.getCommentCount(comment.getEntityId(), comment.getEntityType());
+            questionService.updateCommentCount(comment.getEntityId(), count);
+
+            eventProducer.fireEvent(new EventModel(EventType.COMMENT).setActorId(comment.getUserId())
+                    .setEntityId(questionId));
+
         } catch (Exception e) {
             logger.error("增加评论失败" + e.getMessage());
         }
-        return "redirect:/question/" + String.valueOf(questionId);
+        return "redirect:/question/" + questionId;
     }
 }

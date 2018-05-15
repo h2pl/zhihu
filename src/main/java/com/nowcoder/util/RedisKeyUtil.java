@@ -26,12 +26,12 @@ public class RedisKeyUtil {
         return BIZ_EVENTQUEUE;
     }
 
-    // 某个实体的粉丝key，key对应集合存储的是这个实体下的用户id
+    // 某个实体的粉丝key
     public static String getFollowerKey(int entityType, int entityId) {
         return BIZ_FOLLOWER + SPLIT + String.valueOf(entityType) + SPLIT + String.valueOf(entityId);
     }
 
-    // 每个用户对某类实体的关注key,key对应的集合存储的是该用户关注的具体实体
+    // 每个用户对某类实体的关注key
     public static String getFolloweeKey(int userId, int entityType) {
         return BIZ_FOLLOWEE + SPLIT + String.valueOf(userId) + SPLIT + String.valueOf(entityType);
     }

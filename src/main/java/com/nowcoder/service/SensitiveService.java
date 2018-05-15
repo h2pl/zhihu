@@ -2,142 +2,189 @@ package com.nowcoder.service;
 
 import org.apache.commons.lang.CharUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.ibatis.annotations.Param;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 
-import javax.swing.tree.TreeNode;
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by 周杰伦 on 2018/5/10.
- */
 @Service
-public class SensitiveService implements InitializingBean{
-    public static final Logger logger = LoggerFactory.getLogger(SensitiveService.class);
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        try {
-            InputStream inputStream = Thread.currentThread().getContextClassLoader().getResourceAsStream("SensitiveWords.txt");
-            InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-            String linetxt;
-            while ((linetxt = bufferedReader.readLine()) != null) {
-                addWord(linetxt);
-            }
-            inputStreamReader.close();
-        }catch (Exception e) {
-            logger.error("读取敏感词文件失败！" + e.getMessage());
-        }
-    }
-    //在字典树中增加关键词，这里指敏感词
-    private void addWord(String lineTxt) {
-        TrieNode trieNode = root;
-        for (int i = 0; i < lineTxt.length(); i++) {
-            Character c = lineTxt.charAt(i);
+public class SensitiveService implements InitializingBean {
 
-            TrieNode node = root.getSubNode(c);
-            if (node == null) {
-                node = new TrieNode();
-                trieNode.addSubNode(c, node);
-            }
+    private static final Logger logger = LoggerFactory.getLogger(SensitiveService.class);
 
-            trieNode = node;
-            if (i == lineTxt.length() - 1) {
-                trieNode.setKeyWordEnd(true);
-            }
-        }
-    }
-    //构造字典树数据结构
+    /**
+     * 默认敏感词替换符
+     */
+    private static final String DEFAULT_REPLACEMENT = "敏感词";
+
+
     private class TrieNode {
-        //是不是关键词的结尾
+
+        /**
+         * true 关键词的终结 ； false 继续
+         */
         private boolean end = false;
 
-        //当前结点下所有的子节点
+        /**
+         * key下一个字符，value是对应的节点
+         */
         private Map<Character, TrieNode> subNodes = new HashMap<>();
 
-        public void addSubNode(Character key, TrieNode trieNode) {
-            subNodes.put(key, trieNode);
+        /**
+         * 向指定位置添加节点树
+         */
+        void addSubNode(Character key, TrieNode node) {
+            subNodes.put(key, node);
         }
 
-        public TrieNode getSubNode(Character key) {
+        /**
+         * 获取下个节点
+         */
+        TrieNode getSubNode(Character key) {
             return subNodes.get(key);
         }
 
-        public boolean isKeyWordEnd() {
+        boolean isKeywordEnd() {
             return end;
         }
 
-        public void setKeyWordEnd(boolean end) {
+        void setKeywordEnd(boolean end) {
             this.end = end;
         }
-    }
-    private TrieNode root = new TrieNode();
 
-    //过滤特殊符号
+        public int getSubNodeCount() {
+            return subNodes.size();
+        }
+
+
+    }
+
+
+    /**
+     * 根节点
+     */
+    private TrieNode rootNode = new TrieNode();
+
+
+    /**
+     * 判断是否是一个符号
+     */
     private boolean isSymbol(char c) {
-        int ic = (int)c;
-        //东亚文字 0x2E80-0x9FFF
+        int ic = (int) c;
+        // 0x2E80-0x9FFF 东亚文字范围
         return !CharUtils.isAsciiAlphanumeric(c) && (ic < 0x2E80 || ic > 0x9FFF);
     }
 
-    //敏感词过滤核心代码
+
+    /**
+     * 过滤敏感词
+     */
     public String filter(String text) {
         if (StringUtils.isBlank(text)) {
             return text;
         }
+        String replacement = DEFAULT_REPLACEMENT;
+        StringBuilder result = new StringBuilder();
 
-        String replacement = "***";
-        TrieNode trieNode = root;
-        int begin = 0;
-        int position = 0;
-
-        StringBuilder res = new StringBuilder();
+        TrieNode tempNode = rootNode;
+        int begin = 0; // 回滚数
+        int position = 0; // 当前比较的位置
 
         while (position < text.length()) {
             char c = text.charAt(position);
-            //如果是开头的特殊符号，那么就添加上，并且begin后移。
+            // 空格直接跳过
             if (isSymbol(c)) {
-                if (trieNode == root) {
-                    res.append(c);
+                if (tempNode == rootNode) {
+                    result.append(c);
                     ++begin;
                 }
-                //无论是开头还是过滤过程之间，position都要后移。
                 ++position;
                 continue;
             }
-            trieNode = trieNode.getSubNode(c);
 
-            if (trieNode == null) {
-                res.append(text.charAt(position));
+            tempNode = tempNode.getSubNode(c);
+
+            // 当前位置的匹配结束
+            if (tempNode == null) {
+                // 以begin开始的字符串不存在敏感词
+                result.append(text.charAt(begin));
+                // 跳到下一个字符开始测试
                 position = begin + 1;
                 begin = position;
-                trieNode = root;
-            }else if (trieNode.isKeyWordEnd()) {
-                res.append(replacement);
+                // 回到树初始节点
+                tempNode = rootNode;
+            } else if (tempNode.isKeywordEnd()) {
+                // 发现敏感词， 从begin到position的位置用replacement替换掉
+                result.append(replacement);
                 position = position + 1;
                 begin = position;
-                trieNode = root;
-            }else {
-                ++ position;
+                tempNode = rootNode;
+            } else {
+                ++position;
             }
         }
-        //最后一段字符串别忘了加
-        res.append(text.substring(begin));
-        return res.toString();
+
+        result.append(text.substring(begin));
+
+        return result.toString();
     }
 
-    public static void main(String[] args) {
-        SensitiveService sensitiveService = new SensitiveService();
-        sensitiveService.addWord("赌博");
-        sensitiveService.addWord("色情");
-        System.out.println(sensitiveService.filter("你好色情"));
+    private void addWord(String lineTxt) {
+        TrieNode tempNode = rootNode;
+        // 循环每个字节
+        for (int i = 0; i < lineTxt.length(); ++i) {
+            Character c = lineTxt.charAt(i);
+            // 过滤空格
+            if (isSymbol(c)) {
+                continue;
+            }
+            TrieNode node = tempNode.getSubNode(c);
+
+            if (node == null) { // 没初始化
+                node = new TrieNode();
+                tempNode.addSubNode(c, node);
+            }
+
+            tempNode = node;
+
+            if (i == lineTxt.length() - 1) {
+                // 关键词结束， 设置结束标志
+                tempNode.setKeywordEnd(true);
+            }
+        }
+    }
+
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        rootNode = new TrieNode();
+
+        try {
+            InputStream is = Thread.currentThread().getContextClassLoader()
+                    .getResourceAsStream("SensitiveWords.txt");
+            InputStreamReader read = new InputStreamReader(is);
+            BufferedReader bufferedReader = new BufferedReader(read);
+            String lineTxt;
+            while ((lineTxt = bufferedReader.readLine()) != null) {
+                lineTxt = lineTxt.trim();
+                addWord(lineTxt);
+            }
+            read.close();
+        } catch (Exception e) {
+            logger.error("读取敏感词文件失败" + e.getMessage());
+        }
+    }
+
+    public static void main(String[] argv) {
+        SensitiveService s = new SensitiveService();
+        s.addWord("色情");
+        s.addWord("好色");
+        System.out.print(s.filter("你好X色**情XX"));
     }
 }
